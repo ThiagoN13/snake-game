@@ -24,7 +24,7 @@
           {{ usuario.pontuacao }}
         </td>
       </tr>
-      <tr v-for="(jogador, index) in usuarios" :key="index">
+      <tr v-for="(jogador, index) in listaUsuarios" :key="index">
         <td>
           {{ index + 1 }}
         </td>
@@ -55,7 +55,10 @@
   </aside>
 
   <div class="tabuleiro" :class="{ 'game-over': gameOver }">
-    <b v-if="gameOver">Você perdeu!</b>
+    <div v-if="gameOver">
+      <b>Você perdeu!</b>
+      <button @click="recomecar">Recomeçar</button>
+    </div>
 
     <table>
       <tr v-for="(linha, linhaIndex) in tabuleiro" :key="linhaIndex" class="linhas" :id="linhaIndex">
@@ -70,7 +73,8 @@
             'marcado': coluna.marcado,
             'usuario': usuario.linha === linhaIndex && usuario.coluna === colunaIndex,
             'percurso': isPercurso(linhaIndex, colunaIndex, usuario),
-            'adversario': isAdversario(linhaIndex, colunaIndex)
+            'adversario': isAdversario(linhaIndex, colunaIndex),
+            'percurso-adversario': isPercursoAdversario(linhaIndex, colunaIndex)
           }">
         </td>
       </tr>
@@ -99,7 +103,9 @@ export default {
       linhas: 40,
       colunas: 40,
       usuario: {},
-      usuarios: []
+      usuarios: [],
+      intervalMovimento: null,
+      ultimaTecla: 'ArrowRight'
     }
   },
 
@@ -136,15 +142,32 @@ export default {
     this.$ws.emit('join', this.usuario)
   },
 
-  destroyed () {
-    this.$ws.emit('logout', this.usuario)
-  },
-
   mounted () {
     document.addEventListener('keydown', this.moverUsuario)
+
+    window.onbeforeunload = this.deslogar
+
+    this.mover()
   },
 
   methods: {
+    deslogar () {
+      document.removeEventListener('keydown', this.moverUsuario)
+      this.$ws.emit('logout', this.usuario)
+    },
+
+    recomecar () {
+
+    },
+
+    mover () {
+      if (this.gameOver) return clearInterval(this.intervalMovimento)
+
+      this.intervalMovimento = setInterval(() => {
+        this.moverUsuario({ key: this.ultimaTecla })
+      }, 500)
+    },
+
     atualizarLista () {
       this.$ws.emit('refresh-list', this.usuario)
     },
@@ -169,9 +192,13 @@ export default {
     },
 
     isPercurso (linha, coluna, usuario) {
-      return this.usuario.percurso.some(caminho => {
+      return usuario.percurso.some(caminho => {
         return caminho[0] === linha && caminho[1] === coluna
       })
+    },
+
+    isPercursoAdversario (linha, coluna) {
+      return this.listaUsuarios.some(usuario => this.isPercurso(linha, coluna, usuario))
     },
 
     isAdversario (linha, coluna) {
@@ -184,7 +211,7 @@ export default {
       return isAdversario
     },
 
-    moverUsuario ($event) {
+    moverUsuario (event) {
       if (this.gameOver) return
 
       const keyName = event.key
@@ -206,12 +233,20 @@ export default {
           break
       }
 
-      if (coluna < 0 || linha < 0 || coluna === this.colunas + 1 || linha === this.linhas + 1) return
+      if (coluna < 0 || linha < 0 || coluna === this.colunas + 1 || linha === this.linhas + 1) {
+        return
+      }
 
       if (this.isPercurso(linha, coluna, this.usuario)) {
+        const [ caminho = [] ] = percurso
+
+        if (caminho[0] === linha && caminho[1] === coluna) return
+
         this.gameOver = true
         return this.$ws.emit('logout', this.usuario)
       }
+
+      this.ultimaTecla = keyName
 
       percurso.splice(percurso.length - 1, 1)
       if (pontuacao > 0) {
@@ -229,8 +264,10 @@ export default {
       if (this.tabuleiro[linha][coluna].marcado) {
         const audio = document.getElementById('up')
         this.usuario.pontuacao++
-        console.log(audio.play())
+
         this.$ws.emit('update', this.usuario)
+
+        audio.play()
 
         this.usuario.percurso.unshift([ percursoOriginal.linha, percursoOriginal.coluna ])
 
@@ -267,6 +304,12 @@ export default {
 
       this.$forceUpdate()
     }
+  },
+
+  computed: {
+    listaUsuarios () {
+      return this.usuarios.filter(usuario => usuario.id !== this.usuario.id)
+    }
   }
 }
 </script>
@@ -274,10 +317,6 @@ export default {
 <style scoped>
 .home {
   display: flex;
-}
-
-.tabuleiro {
-
 }
 
 .tabuleiro table {
@@ -314,6 +353,10 @@ export default {
 }
 
 .adversario {
+  background-color: #A9A9A9
+}
+
+.percurso-adversario {
   background-color: #cccccc
 }
 
