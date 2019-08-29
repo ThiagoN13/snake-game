@@ -4,8 +4,8 @@ const io = require('socket.io')(3001)
 let usuarios = []
 let marcadores = 0
 const tabuleiro = []
-const LINHAS = 120
-const COLUNAS = 120
+const LINHAS = 40
+const COLUNAS = 40
 
 criarTabuleiro()
 adicionarMarcador()
@@ -59,6 +59,7 @@ io.on('connection', function (socket) {
 
   socket.on('get-tabuleiro', function () {
     socket.emit('refresh-tabuleiro', { tabuleiro, marcadores, usuarios, COLUNAS, LINHAS })
+    socket.emit('list', usuarios)
   })
 
   socket.on('remover-marcador', function (marcador) {

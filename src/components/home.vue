@@ -1,5 +1,5 @@
 <template>
-<div class="home">
+<div class="home" id="home">
   <aside class="painel">
     <table>
       <tr>
@@ -56,15 +56,18 @@
       <button @click="recomecar">Recomeçar</button>
     </div>
 
-    <table>
-      <tr v-for="(linha, linhaIndex) in tabuleiro" :key="linhaIndex" class="linhas" :id="linhaIndex">
-        <td
+    <div class="grids">
+      <div
+        v-for="(linha, linhaIndex) in tabuleiro"
+        :key="linhaIndex"
+        class="linhas"
+        :id="linhaIndex">
+        <div
           v-for="(coluna, colunaIndex) in linha"
           :ref="`${linhaIndex}:${colunaIndex}`"
           :key="colunaIndex"
-          :id="colunaIndex"
+          :id="`${linhaIndex}:${colunaIndex}`"
           class="colunas"
-          :style="{ width: '10px' }"
           :class="{
             'marcado': coluna.marcado,
             'usuario': usuario.linha === linhaIndex && usuario.coluna === colunaIndex,
@@ -72,9 +75,10 @@
             'adversario': isAdversario(linhaIndex, colunaIndex),
             'percurso-adversario': isPercursoAdversario(linhaIndex, colunaIndex)
           }">
-        </td>
-      </tr>
-    </table>
+          </div>
+      </div>
+    </div>
+
   </div>
 
   <audio id="up">
@@ -105,48 +109,52 @@ export default {
     }
   },
 
-  created () {
-    // this.spawnMarcadores()
-
+  mounted () {
     this.usuario = this.esquemaUsuario()
 
     this.$ws.emit('refresh-list', this.usuario)
     this.$ws.emit('get-tabuleiro', this.usuario)
 
-    this.$ws.on('refresh-tabuleiro', (data) => {
-      const { tabuleiro = [], marcadores = 0, usuarios = [], LINHAS, COLUNAS } = data
-
-      this.tabuleiro = tabuleiro
-      this.marcadores = marcadores
-      this.usuarios = usuarios
-      this.linhas = LINHAS
-      this.colunas = COLUNAS
-    })
-
-    this.$ws.on('list', (data) => {
-      this.usuarios = data
-    })
-
-    this.$ws.on('update', (data) => {
-      const index = this.usuarios.findIndex(usuario => usuario.id === data.id)
-
-      if (index >= 0) {
-        this.usuarios.splice(index, 1, data)
-      }
-    })
-
-    this.$ws.emit('join', this.usuario)
-  },
-
-  mounted () {
     document.addEventListener('keydown', this.moverUsuario)
 
     window.onbeforeunload = this.deslogar
 
     this.mover()
+
+    this.registrarEventos()
   },
 
   methods: {
+    registrarEventos () {
+        this.$ws.on('refresh-tabuleiro', (data) => {
+        const { tabuleiro = [], marcadores = 0, usuarios = [], LINHAS, COLUNAS } = data
+
+        this.tabuleiro = tabuleiro
+        this.marcadores = marcadores
+        this.usuarios = usuarios
+        this.linhas = LINHAS
+        this.colunas = COLUNAS
+
+        setTimeout(() => {
+          this.focarUsuario(this.usuario.linha, this.usuario.coluna)
+        })
+      })
+
+      this.$ws.on('list', (data) => {
+        this.usuarios = data
+      })
+
+      this.$ws.on('update', (data) => {
+        const index = this.usuarios.findIndex(usuario => usuario.id === data.id)
+
+        if (index >= 0) {
+          this.usuarios.splice(index, 1, data)
+        }
+      })
+
+      this.$ws.emit('join', this.usuario)
+    },
+
     deslogar () {
       document.removeEventListener('keydown', this.moverUsuario)
       this.$ws.emit('logout', this.usuario)
@@ -161,7 +169,7 @@ export default {
 
       this.intervalMovimento = setInterval(() => {
         this.moverUsuario({ key: this.ultimaTecla })
-      }, 500)
+      }, 1000)
     },
 
     atualizarLista () {
@@ -172,8 +180,10 @@ export default {
       this.$ws.emit('update', this.usuario)
     },
 
-    isPercurso (linha, coluna, usuario) {
-      return usuario.percurso.some(caminho => {
+    isPercurso (linha, coluna, usuario = {}) {
+      const { percurso = [] } = usuario
+
+      return percurso.some(caminho => {
         return caminho[0] === linha && caminho[1] === coluna
       })
     },
@@ -193,6 +203,10 @@ export default {
     },
 
     moverUsuario (event) {
+      if (event.preventDefault) {
+        event.preventDefault()
+      }
+
       if (this.gameOver) return
 
       const keyName = event.key
@@ -243,6 +257,8 @@ export default {
 
       this.$ws.emit('update', this.usuario)
 
+      // this.focarUsuario(this.usuario.linha, this.usuario.coluna)
+
       this.marcarPonto(linha, coluna, percursoOriginal)
     },
 
@@ -279,6 +295,19 @@ export default {
       const coluna = Math.floor(Math.random() * this.colunas)
 
       return { linha, coluna }
+    },
+
+    focarUsuario (linha, coluna) {
+      const elemento = document.getElementById(`${linha}:${coluna}`)
+      const tabuleiro = document.getElementById('home')
+
+      if (elemento) {
+        const coordenadas = elemento.getBoundingClientRect()
+        const { width, height } = tabuleiro.getBoundingClientRect()
+        const { x, y } = coordenadas
+
+        tabuleiro.scrollTo(x + (width / 2), y + (height / 2))
+      }
     }
   },
 
@@ -292,18 +321,37 @@ export default {
 
 <style scoped>
 .home {
-  display: flex;
+  margin: 0;
+  overflow: auto;
+  height: 100vh;
+  width: 100vw
+}
+
+.tabuleiro {
+  margin: 10px
 }
 
 .tabuleiro table {
   border: 1px solid black;
 }
 
+.grids {
+  border: 1px solid black;
+  display: grid;
+  grid-auto-flow: row;
+  width: max-content
+}
+
 .painel {
-  text-align: left;
-  display: inline-block;
+  border-radius: 10px;
+  margin: 15px;
   padding: 10px;
-  width: 20%;
+  background-color: #DCDCDC;
+  position: fixed;
+  text-align: left;
+  width: auto;
+  right: 0;
+  top: 0
 }
 
 .painel table {
@@ -313,7 +361,14 @@ export default {
 .colunas {
   padding: 10px;
   height: 10px;
-  width: 5px
+  width: 5px;
+  grid-gap: 0;
+}
+
+.linhas {
+  display: grid;
+  grid-auto-flow: column;
+  grid-gap: 0;
 }
 
 .marcado {
