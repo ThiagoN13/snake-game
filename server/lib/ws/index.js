@@ -43,7 +43,7 @@ io.on('connection', function (socket) {
 
     adicionarMarcador()
     socket.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios })
-    socket.broadcast.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios })
+    socket.broadcast.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios, COLUNAS, LINHAS })
   })
 
   socket.on('join', function (data) {

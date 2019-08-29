@@ -77,6 +77,10 @@
     </table>
   </div>
 
+  <audio id="up">
+    <source src="../assets/audio/up.mp3" type="audio/mpeg">
+  </audio>
+
 </div>
 </template>
 
@@ -92,8 +96,8 @@ export default {
       intervaloMarcador: null,
       tabuleiro: [],
       marcadores: 0,
-      linhas: 10,
-      colunas: 10,
+      linhas: 40,
+      colunas: 40,
       usuario: {},
       usuarios: []
     }
@@ -108,11 +112,13 @@ export default {
     this.$ws.emit('get-tabuleiro', this.usuario)
 
     this.$ws.on('refresh-tabuleiro', (data) => {
-      const { tabuleiro = [], marcadores = 0, usuarios = [] } = data
+      const { tabuleiro = [], marcadores = 0, usuarios = [], LINHAS, COLUNAS } = data
 
       this.tabuleiro = tabuleiro
       this.marcadores = marcadores
       this.usuarios = usuarios
+      this.linhas = LINHAS
+      this.colunas = COLUNAS
     })
 
     this.$ws.on('list', (data) => {
@@ -204,6 +210,7 @@ export default {
 
       if (this.isPercurso(linha, coluna, this.usuario)) {
         this.gameOver = true
+        return this.$ws.emit('logout', this.usuario)
       }
 
       percurso.splice(percurso.length - 1, 1)
@@ -215,9 +222,14 @@ export default {
 
       this.$ws.emit('update', this.usuario)
 
-      if (this.tabuleiro[linha][coluna].marcado) {
-        this.usuario.pontuacao++
+      this.marcarPonto(linha, coluna, percursoOriginal)
+    },
 
+    marcarPonto (linha, coluna, percursoOriginal) {
+      if (this.tabuleiro[linha][coluna].marcado) {
+        const audio = document.getElementById('up')
+        this.usuario.pontuacao++
+        console.log(audio.play())
         this.$ws.emit('update', this.usuario)
 
         this.usuario.percurso.unshift([ percursoOriginal.linha, percursoOriginal.coluna ])
@@ -227,9 +239,6 @@ export default {
       }
     },
 
-    atualizarUsuario (type) {
-
-    },
 
     esquemaUsuario () {
       return {
