@@ -4,8 +4,8 @@ const io = require('socket.io')(3001)
 let usuarios = []
 let marcadores = 0
 const tabuleiro = []
-const LINHAS = 40
-const COLUNAS = 40
+const LINHAS = 120
+const COLUNAS = 120
 
 criarTabuleiro()
 adicionarMarcador()
@@ -29,11 +29,36 @@ function adicionarMarcador () {
   marcadores++
 }
 
+function removerUsuario (data) {
+  const index = usuarios.findIndex(usuario => usuario.id === data.id)
+
+  if (index >= 0) {
+    usuarios.splice(index, 1)
+  }
+}
+
+function diferencaSegundos (dataInicio, dataFim) {
+  const milisegundosInicial = new Date(dataInicio).getTime()
+  const milisegundosFinal = new Date(dataFim).getTime()
+
+  const diferenca = milisegundosFinal - milisegundosInicial
+
+  return diferenca > 1000 * 10
+}
+
+setInterval(() => {
+  usuarios.forEach(usuario => {
+    if (diferencaSegundos(usuario.ultimoMovimento, new Date())) {
+      removerUsuario(usuario)
+    }
+  })
+}, 1000)
+
 io.on('connection', function (socket) {
   console.log("Connected!")
 
   socket.on('get-tabuleiro', function () {
-    socket.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios })
+    socket.emit('refresh-tabuleiro', { tabuleiro, marcadores, usuarios, COLUNAS, LINHAS })
   })
 
   socket.on('remover-marcador', function (marcador) {
@@ -42,7 +67,7 @@ io.on('connection', function (socket) {
     marcadores--
 
     adicionarMarcador()
-    socket.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios })
+    socket.emit('refresh-tabuleiro', { tabuleiro, marcadores, usuarios, COLUNAS, LINHAS })
     socket.broadcast.emit('refresh-tabuleiro', {  tabuleiro, marcadores, usuarios, COLUNAS, LINHAS })
   })
 
@@ -58,6 +83,7 @@ io.on('connection', function (socket) {
     const index = usuarios.findIndex(usuario => usuario.id === data.id)
 
     if (index >= 0) {
+      data.ultimoMovimento = new Date()
       usuarios.splice(index, 1, data)
     }
 
@@ -65,11 +91,7 @@ io.on('connection', function (socket) {
   })
 
   socket.on('logout', function (data) {
-    const index = usuarios.findIndex(usuario => usuario.id === data.id)
-
-    if (index >= 0) {
-      usuarios.splice(index, 1)
-    }
+    removerUsuario(data)
 
     socket.broadcast.emit('list', usuarios)
   })

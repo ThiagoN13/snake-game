@@ -48,10 +48,6 @@
     <div>
       Marcadores: {{ marcadores }}
     </div>
-
-    <button @click="adicionarMark">
-      Adicionar marcador
-    </button>
   </aside>
 
   <div class="tabuleiro" :class="{ 'game-over': gameOver }">
@@ -176,21 +172,6 @@ export default {
       this.$ws.emit('update', this.usuario)
     },
 
-    spawnMarcadores () {
-      if (!this.spawnPorTempo) {
-        this.adicionarMark()
-        return clearInterval(this.intervaloMarcador)
-      }
-
-      if (this.intervaloMarcador) {
-        clearInterval(this.intervaloMarcador)
-      }
-
-      setInterval(() => {
-        this.adicionarMark()
-      }, this.tempoMarcador * 1000)
-    },
-
     isPercurso (linha, coluna, usuario) {
       return usuario.percurso.some(caminho => {
         return caminho[0] === linha && caminho[1] === coluna
@@ -233,7 +214,7 @@ export default {
           break
       }
 
-      if (coluna < 0 || linha < 0 || coluna === this.colunas + 1 || linha === this.linhas + 1) {
+      if (coluna < 0 || linha < 0 || coluna >= this.colunas + 1 || linha >= this.linhas + 1) {
         return
       }
 
@@ -242,6 +223,11 @@ export default {
 
         if (caminho[0] === linha && caminho[1] === coluna) return
 
+        this.gameOver = true
+        return this.$ws.emit('logout', this.usuario)
+      }
+
+      if (this.isPercursoAdversario(linha, coluna) || this.isAdversario(linha, coluna)) {
         this.gameOver = true
         return this.$ws.emit('logout', this.usuario)
       }
@@ -271,38 +257,28 @@ export default {
 
         this.usuario.percurso.unshift([ percursoOriginal.linha, percursoOriginal.coluna ])
 
-        this.desmarcarCelula(this.usuario.linha, this.usuario.coluna)
         this.$ws.emit('remover-marcador', { linha, coluna })
       }
     },
 
-
     esquemaUsuario () {
+      const { linha, coluna } = this.spawnUsuario()
+
       return {
         id: Date.now().toString(32),
         nome: Date.now().toString(32),
         pontuacao: 0,
         percurso: [],
-        coluna: Math.floor(this.linhas / 2),
-        linha: Math.floor(this.colunas / 2)
+        coluna,
+        linha
       }
     },
 
-    desmarcarCelula (linha, coluna) {
-      this.tabuleiro[this.usuario.linha][this.usuario.coluna].marcado = false
-
-      this.marcadores--
-    },
-
-    adicionarMark () {
+    spawnUsuario () {
       const linha = Math.floor(Math.random() * this.linhas)
       const coluna = Math.floor(Math.random() * this.colunas)
 
-      this.tabuleiro[linha][coluna].marcado = true
-
-      this.marcadores++
-
-      this.$forceUpdate()
+      return { linha, coluna }
     }
   },
 
@@ -361,7 +337,7 @@ export default {
 }
 
 .game-over {
-  background-color: #cccccc
+  background-color: #DCDCDC
 }
 
 .game-over .usuario {
