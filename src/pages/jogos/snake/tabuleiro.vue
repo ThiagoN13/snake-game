@@ -128,6 +128,7 @@ export default {
     recomecar () {
       this.$ws.emit('logout', this.usuario)
       this.gameOver = false
+      this.usuario = this.esquemaUsuario()
 
       this.$ws.emit('join', this.usuario)
     },
