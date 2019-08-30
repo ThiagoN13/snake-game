@@ -1,60 +1,19 @@
 <template>
-<div class="home" id="home">
-  <aside class="painel">
-    <table>
-      <tr>
-        <th>
-          Posição
-        </th>
-        <th>
-          Usuário
-        </th>
-        <th>
-          Pontuação
-        </th>
-      </tr>
-      <tr>
-        <td>
-          X
-        </td>
-        <td>
-          {{ usuario.nome }}
-        </td>
-        <td>
-          {{ usuario.pontuacao }}
-        </td>
-      </tr>
-      <tr v-for="(jogador, index) in listaUsuarios" :key="index">
-        <td>
-          {{ index + 1 }}
-        </td>
-        <td>
-          {{ jogador.nome }}
-        </td>
-        <td>
-          {{ jogador.pontuacao }}
-        </td>
-      </tr>
-    </table>
-
-    <button @click="atualizarLista">
-      Atualizar Lista
-    </button>
-
-    <div>
-      <input type="text" v-model="usuario.nome" @blur="onAlteracaoNome">
-    </div>
-
+<div class="home" id="home" :class="{ 'game-over': gameOver }">
+  <c-painel :usuario="usuario" :usuarios="listaUsuarios">
     <div>
       Marcadores: {{ marcadores }}
     </div>
-  </aside>
+  </c-painel>
 
-  <div class="tabuleiro" :class="{ 'game-over': gameOver }">
-    <div v-if="gameOver">
-      <b>Você perdeu!</b>
-      <button @click="recomecar">Recomeçar</button>
-    </div>
+  <div v-if="gameOver" class="container-game-over">
+    <b>Você perdeu!</b>
+    <button @click="recomecar" class="btn-remover">
+      Recomeçar!
+    </button>
+  </div>
+
+  <div class="tabuleiro">
 
     <div class="grids">
       <div
@@ -82,15 +41,21 @@
   </div>
 
   <audio id="up">
-    <source src="../assets/audio/up.mp3" type="audio/mpeg">
+    <source src="../../../assets/audio/up.mp3" type="audio/mpeg">
   </audio>
 
 </div>
 </template>
 
 <script>
+import cPainel from '../../../components/painel/c-painel'
+
 export default {
   name: 'home',
+
+  components: {
+    cPainel
+  },
 
   data () {
     return {
@@ -140,7 +105,7 @@ export default {
         })
       })
 
-      this.$ws.on('list', (data) => {
+      this.$ws.on('list', (data = []) => {
         this.usuarios = data
       })
 
@@ -161,7 +126,10 @@ export default {
     },
 
     recomecar () {
+      this.$ws.emit('logout', this.usuario)
+      this.gameOver = false
 
+      this.$ws.emit('join', this.usuario)
     },
 
     mover () {
@@ -170,14 +138,6 @@ export default {
       this.intervalMovimento = setInterval(() => {
         this.moverUsuario({ key: this.ultimaTecla })
       }, 1000)
-    },
-
-    atualizarLista () {
-      this.$ws.emit('refresh-list', this.usuario)
-    },
-
-    onAlteracaoNome () {
-      this.$ws.emit('update', this.usuario)
     },
 
     isPercurso (linha, coluna, usuario = {}) {
@@ -279,10 +239,16 @@ export default {
 
     esquemaUsuario () {
       const { linha, coluna } = this.spawnUsuario()
+      let nome = localStorage.getItem('nickname')
+      const blackList = [null, undefined, '']
+
+      if (blackList.includes(nome)) {
+        nome = Date.now().toString(32)
+      }
 
       return {
         id: Date.now().toString(32),
-        nome: Date.now().toString(32),
+        nome,
         pontuacao: 0,
         percurso: [],
         coluna,
@@ -324,7 +290,8 @@ export default {
   margin: 0;
   overflow: auto;
   height: 100vh;
-  width: 100vw
+  width: 100vw;
+  background-color: #FFFF;
 }
 
 .tabuleiro {
@@ -342,20 +309,16 @@ export default {
   width: max-content
 }
 
-.painel {
-  border-radius: 10px;
-  margin: 15px;
-  padding: 10px;
-  background-color: #DCDCDC;
-  position: fixed;
-  text-align: left;
-  width: auto;
-  right: 0;
-  top: 0
+.container-game-over {
+  position: absolute;
+  top: 50%;
+  right: 50%;
 }
 
-.painel table {
-  margin-bottom: 20px
+.btn-remover {
+  display: block;
+  margin-top: 10px;
+  width: 100%
 }
 
 .colunas {
