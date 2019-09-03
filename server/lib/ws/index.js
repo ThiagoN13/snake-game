@@ -1,4 +1,4 @@
-const config = require('../config/env')
+const config = require('../../config/env')
 const PORT = config.ws.port
 
 const io = require('socket.io')(PORT)
