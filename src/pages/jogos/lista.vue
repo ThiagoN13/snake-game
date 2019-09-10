@@ -24,9 +24,8 @@ export default {
     return {
       jogos: [
         { nome: 'Snake', imagem: 'https://i.redd.it/b3esnz5ra34y.jpg' },
-        { nome: 'Snake', imagem: 'https://cdn.blackmilkclothing.com/media/wysiwyg/Wallpapers/PhoneWallpapers_FloralCoral.jpg' },
-        { nome: 'Snake', imagem: 'https://media.giphy.com/media/10SvWCbt1ytWCc/giphy.gif' },
-        { nome: 'Snake', imagem: 'https://media.giphy.com/media/LwIyvaNcnzsD6/giphy.gif' }
+        { nome: 'Mina', imagem: 'https://media.giphy.com/media/10SvWCbt1ytWCc/giphy.gif' },
+        { nome: 'Advinha', imagem: 'https://media.giphy.com/media/LwIyvaNcnzsD6/giphy.gif' }
       ]
     }
   },

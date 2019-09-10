@@ -71,7 +71,6 @@
     20% 50%
   );
   transition: all 0.7s cubic-bezier(0.895, 0.03, 0.685, 0.22);
-  background-image: url(https://source.unsplash.com/l8p1aWZqHvE/1000x1000);
   background-color: #148bff;
 }
 

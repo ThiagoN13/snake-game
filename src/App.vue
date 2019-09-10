@@ -1,14 +1,23 @@
 <template>
-  <div id="app" :style="{ 'background-color': corAtual }">
-    <router-view></router-view>
+  <div id="app">
+    <c-header v-if="!isJogo"></c-header>
+
+    <main class="c-main" :style="{ 'background-color': corAtual }">
+      <router-view></router-view>
+    </main>
   </div>
 </template>
 
 <script>
 import { obtainArrayOfInterpolatedColors, getRandomColor } from './lib/cores'
+import cHeader from './components/header/c-header'
 
 export default {
   name: 'app',
+
+  components: {
+    cHeader
+  },
 
   data () {
     return {
@@ -43,15 +52,18 @@ export default {
         this.indexCor = 0
       }
     }
+  },
+
+  computed: {
+    isJogo () {
+      return this.$route.fullPath.includes('/jogos')
+    }
   }
 }
 </script>
 
 <style>
-#lobby {
-  width: 100%;
+.c-main {
   height: 100%;
-  transition: 2s background-color ease
 }
-
 </style>

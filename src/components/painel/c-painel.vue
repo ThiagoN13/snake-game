@@ -57,6 +57,7 @@ export default {
 
 <style>
 .painel {
+  opacity: .7;
   border-radius: 10px;
   margin: 15px;
   padding: 10px;

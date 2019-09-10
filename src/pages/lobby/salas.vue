@@ -36,3 +36,11 @@ export default {
   }
 }
 </script>
+
+<style>
+#lobby {
+  width: 100%;
+  height: 100%;
+  transition: 2s background-color ease
+}
+</style>
