@@ -65,8 +65,8 @@ export default {
       intervaloMarcador: null,
       tabuleiro: [],
       marcadores: 0,
-      linhas: 40,
-      colunas: 40,
+      linhas: 15,
+      colunas: 30,
       usuario: {},
       usuarios: [],
       intervalMovimento: null,
@@ -218,7 +218,7 @@ export default {
 
       this.$ws.emit('update', this.usuario)
 
-      // this.focarUsuario(this.usuario.linha, this.usuario.coluna)
+      this.focarUsuario(this.usuario.linha, this.usuario.coluna)
 
       this.marcarPonto(linha, coluna, percursoOriginal)
     },
@@ -265,15 +265,23 @@ export default {
     },
 
     focarUsuario (linha, coluna) {
+      if (linha != this.usuario.linha) {
+        if (linha + 5 <= this.linhas) {
+          linha += 5
+        }
+      } else if (coluna != this.usuario.coluna) {
+        if (coluna + 5 <= this.colunas) {
+          coluna += 5
+        }
+      }
+
       const elemento = document.getElementById(`${linha}:${coluna}`)
       const tabuleiro = document.getElementById('home')
+      const usuario = document.getElementsByClassName('usuario')[0]
 
       if (elemento) {
-        const coordenadas = elemento.getBoundingClientRect()
-        const { width, height } = tabuleiro.getBoundingClientRect()
-        const { x, y } = coordenadas
 
-        tabuleiro.scrollTo(x + (width / 2), y + (height / 2))
+          elemento.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
       }
     }
   },

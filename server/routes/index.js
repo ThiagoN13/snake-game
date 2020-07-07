@@ -3,8 +3,8 @@ const io = require('../lib/ws')
 let usuarios = []
 let marcadores = 0
 const tabuleiro = []
-const LINHAS = 17
-const COLUNAS = 50
+const COLUNAS = 30
+const LINHAS = 15
 
 criarTabuleiro()
 adicionarMarcador()
