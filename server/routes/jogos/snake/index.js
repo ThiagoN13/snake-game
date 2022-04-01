@@ -6,5 +6,3 @@ const collection = db
 collection
   .insert({ id: 'snake', nome: 'Snake', salas: [] })
   .write()
-
-  

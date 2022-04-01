@@ -18,7 +18,7 @@
     </div>
 
     <div class="nome-sala">
-      Nike Air Max
+      Iniciar
     </div>
   </div>
 </div>
